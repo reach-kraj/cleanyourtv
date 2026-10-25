@@ -173,7 +173,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private View btnInputs;
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
     private boolean showInputsPill = true;
-    private TextView btnWifi;
+    private TextView btnWifi, btnBluetooth;
     /** The network pill's icon as last set, so a refresh that changes nothing does not lay the top bar out again. */
     private int wifiIcon;
     /** The pills have been filled in once; later resumes refresh them after the first frame. */
@@ -580,6 +580,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     AnimationUtils.loadAnimation(this, R.anim.tile_enter), 0.06f));
         }
         adapter = new AppAdapter(this, this, COLUMNS, cfg);
+        if (getResources().getBoolean(R.bool.hdmi_tiles)) grid.addItemDecoration(new InputsDecoration(this, adapter, COLUMNS, density));
         dockApps = cfg.dockApps;
         fillDockLeavesSlots = !cfg.fillDock;
         Order savedOrder = Order.load(Order.file(this));
@@ -688,7 +689,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         btnInputs = findViewById(R.id.btnInputs);
         View btnSettings = findViewById(R.id.btnSettings);
-        btnInputs.setOnClickListener(v -> showInputs());
+        boolean inputsDirect = getResources().getBoolean(R.bool.inputs_pill_direct);
+        btnInputs.setOnClickListener(v -> {
+            // inputs_pill_direct: straight to the lowest connected HDMI port; the menu when none is (or the TV can't tell).
+            String hdmi = inputsDirect ? HdmiInputs.firstConnected(this) : null;
+            if (hdmi != null) openInput(hdmi);
+            else showInputs();
+        });
+        btnBluetooth = findViewById(R.id.btnBluetooth);
+        btnBluetooth.setVisibility(getResources().getBoolean(R.bool.show_bluetooth_pill) ? View.VISIBLE : View.GONE);
+        btnBluetooth.setOnClickListener(v -> openBluetoothPill());
         btnWifi.setOnClickListener(v -> openNetworkPill());
         btnWifi.setOnLongClickListener(v -> {
             open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
@@ -734,6 +744,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             showInputsPill = false;
             btnInputs.setVisibility(View.GONE);
             btnWifi.setVisibility(View.GONE);
+            btnBluetooth.setVisibility(View.GONE);
             ((TextView) btnSettings).setText(R.string.settings);
             ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_settings, 0, 0, 0);
             if (!iconOnlyButtons) makeIconOnly((TextView) btnSettings);
@@ -749,6 +760,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (iconOnlyButtons) {
             if (cfg.wifiLabelWidth > 0) btnWifi.setMaxWidth(Math.round(cfg.wifiLabelWidth * density));
             else makeIconOnly(btnWifi);
+            makeIconOnly(btnBluetooth);
             makeIconOnly((TextView) btnSettings);
         }
         if (cfg.iconOnlyInputs) makeIconOnly((TextView) btnInputs);
@@ -776,12 +788,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         };
         btnInputs.setOnKeyListener(pillKeys);
         btnWifi.setOnKeyListener(pillKeys);
+        btnBluetooth.setOnKeyListener(pillKeys);
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnReorder, btnLibraryTop, btnSettings));
+            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnBluetooth, btnWifi, btnReorder, btnLibraryTop, btnSettings));
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
@@ -2226,6 +2239,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 focusLibrary();
                 return true;
             }
+            // The empty slots that finish the last row of apps (before hdmi_tiles) take no focus.
+            if (forward && adapter.isEmptyAt(position + 1) && position >= COLUMNS) return true;
             // In the dock, the last app is the row's end: the empty slots after it take no focus.
             int rowCount = position < COLUMNS ? Math.min(count, adapter.dockFilled()) : count;
             return GridNavigation.atHorizontalEdge(position, rowCount, COLUMNS,
@@ -2323,6 +2338,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             bar.addView(button, bar.indexOfChild(btnWifi));
             topAppButtons.add(button);
         }
+    }
+
+    @Override public void onInputTile(String inputId) {
+        openInput(inputId);
     }
 
     @Override public void onLibraryUp() {
@@ -2736,6 +2755,20 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     /** The network pill opens the VPN app when one is configured and installed, otherwise Wi-Fi settings. */
+    /** show_bluetooth_pill: TV Settings' accessories slice (Remotes & Accessories on Google TV), else the standard
+     *  Bluetooth settings through SystemSettings' fallbacks. */
+    private void openBluetoothPill() {
+        String slice = getString(R.string.bluetooth_slice_uri);
+        if (!slice.isEmpty()) {
+            Intent i = new Intent("android.settings.SLICE_SETTINGS").putExtra("slice_uri", slice);
+            if (i.resolveActivity(getPackageManager()) != null) {
+                open(i);
+                return;
+            }
+        }
+        open(systemIntent(Settings.ACTION_BLUETOOTH_SETTINGS));
+    }
+
     private void openNetworkPill() {
         Intent i = vpnApp.isEmpty() ? null : getPackageManager().getLeanbackLaunchIntentForPackage(vpnApp);
         if (i == null && !vpnApp.isEmpty()) i = getPackageManager().getLaunchIntentForPackage(vpnApp);

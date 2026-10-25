@@ -35,6 +35,13 @@
         <intent>
             <action android:name="android.settings.DISPLAY_SETTINGS" />
         </intent>
+        <!-- show_bluetooth_pill: TV Settings' accessories slice, then the standard Bluetooth settings. -->
+        <intent>
+            <action android:name="android.settings.SLICE_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.BLUETOOTH_SETTINGS" />
+        </intent>
         <intent>
             <action android:name="android.settings.MANAGE_APPLICATIONS_SETTINGS" />
         </intent>
