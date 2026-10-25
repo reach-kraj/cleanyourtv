@@ -173,7 +173,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private View btnInputs;
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
     private boolean showInputsPill = true;
-    private TextView btnWifi;
+    private TextView btnWifi, btnBluetooth;
     /** The network pill's icon as last set, so a refresh that changes nothing does not lay the top bar out again. */
     private int wifiIcon;
     /** The pills have been filled in once; later resumes refresh them after the first frame. */
@@ -689,6 +689,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnInputs = findViewById(R.id.btnInputs);
         View btnSettings = findViewById(R.id.btnSettings);
         btnInputs.setOnClickListener(v -> showInputs());
+        btnBluetooth = findViewById(R.id.btnBluetooth);
+        if (cfg.showBluetoothPill) {
+            btnBluetooth.setVisibility(View.VISIBLE);
+            btnBluetooth.setOnClickListener(v -> openBluetoothPill());
+        }
         btnWifi.setOnClickListener(v -> openNetworkPill());
         btnWifi.setOnLongClickListener(v -> {
             open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
@@ -734,6 +739,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             showInputsPill = false;
             btnInputs.setVisibility(View.GONE);
             btnWifi.setVisibility(View.GONE);
+            btnBluetooth.setVisibility(View.GONE);
             ((TextView) btnSettings).setText(R.string.settings);
             ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_settings, 0, 0, 0);
             if (!iconOnlyButtons) makeIconOnly((TextView) btnSettings);
@@ -749,6 +755,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (iconOnlyButtons) {
             if (cfg.wifiLabelWidth > 0) btnWifi.setMaxWidth(Math.round(cfg.wifiLabelWidth * density));
             else makeIconOnly(btnWifi);
+            makeIconOnly(btnBluetooth);
             makeIconOnly((TextView) btnSettings);
         }
         if (cfg.iconOnlyInputs) makeIconOnly((TextView) btnInputs);
@@ -776,12 +783,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         };
         btnInputs.setOnKeyListener(pillKeys);
         btnWifi.setOnKeyListener(pillKeys);
+        btnBluetooth.setOnKeyListener(pillKeys);
         btnSettings.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnReorder, btnLibraryTop, btnSettings));
+            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnBluetooth, btnWifi, btnReorder, btnLibraryTop, btnSettings));
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 button.setOnFocusChangeListener((view, focused) -> view.animate()
@@ -2736,6 +2744,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     /** The network pill opens the VPN app when one is configured and installed, otherwise Wi-Fi settings. */
+    /** TV Settings' accessories screen (AOSP TvSettings, Remotes & Accessories on Google TV), for show_bluetooth_pill. */
+    private static final String BLUETOOTH_SLICE = "content://com.android.tv.settings.accessories.sliceprovider/general";
+
+    /** show_bluetooth_pill: the accessories slice where TV Settings has it, else the standard Bluetooth settings. */
+    private void openBluetoothPill() {
+        Intent i = new Intent("android.settings.SLICE_SETTINGS").putExtra("slice_uri", BLUETOOTH_SLICE);
+        if (i.resolveActivity(getPackageManager()) != null) open(i);
+        else open(systemIntent(Settings.ACTION_BLUETOOTH_SETTINGS));
+    }
+
     private void openNetworkPill() {
         Intent i = vpnApp.isEmpty() ? null : getPackageManager().getLeanbackLaunchIntentForPackage(vpnApp);
         if (i == null && !vpnApp.isEmpty()) i = getPackageManager().getLaunchIntentForPackage(vpnApp);
