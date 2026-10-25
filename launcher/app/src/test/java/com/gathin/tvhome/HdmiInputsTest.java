@@ -21,6 +21,13 @@ public class HdmiInputsTest {
                 HdmiInputs.order(Arrays.asList("HDMI 2", "HDMI 10", "HDMI 1", "HDMI 3")));
     }
 
+    @Test public void theHdmiRowStartsOnARowOfItsOwn() {
+        assertEquals(0, HdmiInputs.rowPadding(12, 4));
+        assertEquals(1, HdmiInputs.rowPadding(11, 4));
+        assertEquals(3, HdmiInputs.rowPadding(9, 4));
+        assertEquals(4, HdmiInputs.rowPadding(2, 6));
+    }
+
     @Test public void everyPortConnectedMeansTheStateIsUnknown() {
         // Sony and some others report all four ports as connected with one device plugged in.
         assertFalse(HdmiInputs.trustState(4, 4));

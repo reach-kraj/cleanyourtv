@@ -92,6 +92,8 @@ final class Config {
     final boolean dateBelowClock;
     /** The Inputs pill switches straight to the lowest connected HDMI port (config.xml, inputs_pill_direct). */
     final boolean inputsPillDirect;
+    /** A row of HDMI tiles after the apps, under an "Inputs" line (config.xml, hdmi_tiles). */
+    final boolean hdmiTiles;
     /** Name after the greeting ("Good morning, Mr. Trịnh"); empty for the greeting alone. */
     final String greetingName;
     final boolean moduleCards;
@@ -262,7 +264,7 @@ final class Config {
                    List<RaceWeekend.Race> raceCalendar, boolean cinematicHome, boolean ambientGlow, boolean appGlow, boolean fadeRows, int homeIdleClockMinutes,
                    boolean keyFilter, boolean dockGlass, String glowStyle, boolean wallpaperCaptions,
                    boolean handleViewInputs, boolean tileMenu, boolean dockEvenPadding, boolean dockBand, boolean cinematicDots, boolean cinematicWhiteFocus, boolean wifiStatusColor, int cinematicScrim, int cinematicArt,
-                   Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean powerOnHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock, boolean inputsPillDirect) {
+                   Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean powerOnHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock, boolean inputsPillDirect, boolean hdmiTiles) {
         this.handleViewInputs = handleViewInputs;
         this.tileMenu = tileMenu;
         this.inputKeycodes = inputKeycodes;
@@ -294,6 +296,7 @@ final class Config {
         this.lunarUtcOffset = lunarUtcOffset;
         this.dateBelowClock = dateBelowClock;
         this.inputsPillDirect = inputsPillDirect;
+        this.hdmiTiles = hdmiTiles;
         this.greetingName = greetingName;
         this.moduleCards = moduleCards;
         this.reducedMotion = reducedMotion;
@@ -470,6 +473,7 @@ final class Config {
         boolean wifiStatusWarnings = res.getBoolean(R.bool.wifi_status_warnings);
         boolean dateBelowClock = res.getBoolean(R.bool.date_below_clock);
         boolean inputsPillDirect = res.getBoolean(R.bool.inputs_pill_direct);
+        boolean hdmiTiles = res.getBoolean(R.bool.hdmi_tiles);
         List<String> topBarApps = new ArrayList<>(Arrays.asList(res.getStringArray(R.array.top_bar_apps)));
         boolean showGreeting = res.getBoolean(R.bool.show_greeting);
         boolean headerWhite = res.getBoolean(R.bool.header_white);
@@ -570,6 +574,7 @@ final class Config {
             wifiStatusWarnings = bool(json, "wifi_status_warnings", wifiStatusWarnings);
             dateBelowClock = bool(json, "date_below_clock", dateBelowClock);
             inputsPillDirect = bool(json, "inputs_pill_direct", inputsPillDirect);
+            hdmiTiles = bool(json, "hdmi_tiles", hdmiTiles);
             topBarApps = stringList(json, "top_bar_apps", topBarApps);
             showGreeting = bool(json, "show_greeting", showGreeting);
             headerWhite = bool(json, "header_white", headerWhite);
@@ -640,7 +645,7 @@ final class Config {
                 dockBand, cinematicDots, cinematicWhiteFocus, wifiStatusColor, cinematicScrim, cinematicArt, wallpaperMoods, gamepadPassthrough,
                 consumeVolumeKeys, powerOnHome, wifiStatusWarnings, topBarApps, showGreeting, headerWhite, clockWallpaper,
                 Math.max(0, Math.min(90, clockWallpaperDim)), clockGlow, glassStyle, singleRow && dockRow, dockBandAll, lunar, lunarOffset,
-                dateBelowClock, inputsPillDirect);
+                dateBelowClock, inputsPillDirect, hdmiTiles);
     }
 
     /**

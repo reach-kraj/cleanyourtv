@@ -61,10 +61,12 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         /** Hold OK on a tile: the activity shows the tile menu (move, remove from Home, app info). */
         void onTileLongPress(int position, View card);
         void onLibraryUp();
+        /** OK on an hdmi_tiles tile: switch to that input. */
+        void onInputTile(String inputId);
     }
 
     static final class Entry {
-        static final int APP = 0, HOME_SETTINGS = 1, CARD = 2, EMPTY = 3;
+        static final int APP = 0, HOME_SETTINGS = 1, CARD = 2, EMPTY = 3, INPUT = 4;
 
         final int kind;
         final String label;
@@ -78,6 +80,8 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         int ambient;
         /** uniform_tiles card fill, top and bottom colour; null until sampled from the icon. */
         int[] backdrop;
+        /** The TV input an INPUT tile switches to. */
+        String inputId;
 
         Entry(String label, ComponentName component, Drawable banner, Drawable icon) {
             this(APP, label, component, banner, icon, null, 0);
@@ -216,6 +220,10 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final Map<String, String> appLabels, appBanners;
     /** Every app tile is its icon on a card tinted from that icon, never its banner (config.xml, uniform_tiles). */
     private final boolean uniformTiles;
+    /** A row of HDMI tiles after the apps, under an "Inputs" line (config.xml, hdmi_tiles). */
+    private final boolean hdmiTiles;
+    /** Position of the first HDMI tile at the last reload(), or -1 for none. */
+    private int firstInput = -1;
     private final List<Entry> items = new ArrayList<>();
 
     AppAdapter(Context ctx, TileListener listener, int dockSize, Config cfg) {
@@ -243,6 +251,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         this.appLabels = cfg.appLabels;
         this.appBanners = cfg.appBanners;
         this.uniformTiles = cfg.uniformTiles;
+        this.hdmiTiles = cfg.hdmiTiles;
         // Tiles keep their identity across reload(), so a focused tile stays on its app instead of
         // its view being rebound to whatever app now sits in that slot.
         setHasStableIds(true);
@@ -334,6 +343,24 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         for (int i = 0; i < emptySlots; i++) {
             fresh.add(docked + i, new Entry(Entry.EMPTY, "", new ComponentName(ctx, "empty-dock-slot-" + i),
                     null, null, null, 0));
+        }
+        firstInput = -1;
+        if (hdmiTiles && !singleRow && !reordering) {
+            List<HdmiInputs.Port> ports = HdmiInputs.list(ctx);
+            if (!ports.isEmpty()) {
+                // The inputs start on a row of their own: empty slots finish the last row of apps.
+                int pad = HdmiInputs.rowPadding(fresh.size(), dockSize);
+                for (int i = 0; i < pad; i++) {
+                    fresh.add(new Entry(Entry.EMPTY, "", new ComponentName(ctx, "empty-input-pad-" + i), null, null, null, 0));
+                }
+                firstInput = fresh.size();
+                for (HdmiInputs.Port p : ports) {
+                    Entry e = new Entry(Entry.INPUT, p.label, new ComponentName(ctx, "input:" + p.id), null,
+                            ctx.getDrawable(R.drawable.ic_input), p.connected ? ctx.getString(R.string.connected) : null, 0);
+                    e.inputId = p.id;
+                    fresh.add(e);
+                }
+            }
         }
         items.clear();
         items.addAll(fresh);
@@ -482,6 +509,7 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
         h.card.setOnClickListener(v -> launch(e));
         h.card.setOnLongClickListener(v -> {
+            if (e.kind == Entry.INPUT) return true;
             if (tileMenu) {
                 int pos = h.getBindingAdapterPosition();
                 if (pos != RecyclerView.NO_POSITION) listener.onTileLongPress(pos, v);
@@ -499,6 +527,10 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     /** Opens the tile's activity by explicit component, with no extras: a card can name nothing else. */
     private void launch(Entry e) {
+        if (e.kind == Entry.INPUT) {
+            listener.onInputTile(e.inputId);
+            return;
+        }
         if (e.kind == Entry.HOME_SETTINGS) {
             ctx.startActivity(new Intent(ctx, HomeSettingsActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
@@ -576,7 +608,9 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     /** Tiles that can be moved: everything but the "Default home" tile, which always stays last. */
     int movableCount() {
-        int n = items.size();
+        // The HDMI tiles and the empty slots before them are not app tiles.
+        int n = firstInput >= 0 ? firstInput : items.size();
+        while (firstInput >= 0 && n > docked + emptySlots && isEmptyAt(n - 1)) n--;
         return n > 0 && items.get(n - 1).kind == Entry.HOME_SETTINGS ? n - 1 : n;
     }
 
@@ -623,7 +657,18 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     /** A position focus can land on: an empty dock slot gives the last dock app. */
     int focusablePosition(int position) {
-        return DockSlots.focusable(position, docked, emptySlots);
+        int p = DockSlots.focusable(position, docked, emptySlots);
+        // The slots that finish the last row of apps before the HDMI tiles take no focus either.
+        while (p > 0 && isEmptyAt(p)) p--;
+        return p;
+    }
+
+    boolean isEmptyAt(int position) {
+        return position >= 0 && position < items.size() && items.get(position).kind == Entry.EMPTY;
+    }
+
+    int firstInputPosition() {
+        return firstInput;
     }
 
     String labelAt(int position) {

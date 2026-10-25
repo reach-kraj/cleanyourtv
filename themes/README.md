@@ -63,6 +63,7 @@ A new key needs one there in the same pull request.
 | `show_network_pill` | bool | The Wi-Fi/Ethernet pill in the top bar (`true` by default); `false` hides it |
 | `top_bar_apps` | list of package names | Apps shown as round buttons with their own logo in the top bar, left of the network pill; they leave the grid |
 | `inputs_pill_direct` | bool | The Inputs pill switches straight to the lowest-numbered connected HDMI port instead of opening its menu, which still opens when the TV can't tell which port is connected (`false` by default) |
+| `hdmi_tiles` | bool | A row of HDMI tiles after the last app, under a thin "Inputs" line, each switching to its port (`false` by default) |
 | `show_inputs_pill` | bool | The Inputs pill in the top bar, shown when the TV has inputs (`true` by default); `false` hides it, and with `top_menu` it also leaves Inputs out of the gear's menu (streamers with no HDMI input, such as the Chromecast with Google TV); what the remote's Input button does is unchanged |
 | `icon_only_buttons` | bool | Wi-Fi and Settings as round icon buttons; Inputs keeps its label (`false` by default) |
 | `icon_only_inputs` | bool | The Inputs pill as a round icon button too, its label kept as the TalkBack description (`false` by default). Works with or without `icon_only_buttons` |

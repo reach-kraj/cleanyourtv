@@ -87,6 +87,11 @@ final class HdmiInputs {
         return order;
     }
 
+    /** Empty slots that finish a row of tiles, so the HDMI tiles start on a row of their own. */
+    static int rowPadding(int tiles, int columns) {
+        return columns <= 0 || tiles % columns == 0 ? 0 : columns - tiles % columns;
+    }
+
     /** Some TVs (Sony) report every port as connected whatever is plugged in; their state means nothing. */
     static boolean trustState(int ports, int connected) {
         return ports <= 1 || connected < ports;

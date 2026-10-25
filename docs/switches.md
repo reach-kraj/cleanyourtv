@@ -51,3 +51,4 @@ fits the rules; keys from before the rule sit on its wanted list until a screens
 | `date_below_clock` | <img src="switches/date_below_clock.jpg" width="320" alt="date_below_clock on a TV"> |
 | `power_on_home` | <img src="switches/power_on_home.jpg" width="320" alt="power_on_home on a TV"> |
 | `inputs_pill_direct` | <img src="switches/inputs_pill_direct.jpg" width="320" alt="inputs_pill_direct on a TV"> |
+| `hdmi_tiles` | <img src="switches/hdmi_tiles.jpg" width="320" alt="hdmi_tiles on a TV"> |

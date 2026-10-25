@@ -580,6 +580,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                     AnimationUtils.loadAnimation(this, R.anim.tile_enter), 0.06f));
         }
         adapter = new AppAdapter(this, this, COLUMNS, cfg);
+        if (cfg.hdmiTiles) grid.addItemDecoration(new InputsDecoration(this, adapter, COLUMNS, density));
         dockApps = cfg.dockApps;
         fillDockLeavesSlots = !cfg.fillDock;
         Order savedOrder = Order.load(Order.file(this));
@@ -2232,6 +2233,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 focusLibrary();
                 return true;
             }
+            // The empty slots that finish the last row of apps (before hdmi_tiles) take no focus.
+            if (forward && adapter.isEmptyAt(position + 1) && position >= COLUMNS) return true;
             // In the dock, the last app is the row's end: the empty slots after it take no focus.
             int rowCount = position < COLUMNS ? Math.min(count, adapter.dockFilled()) : count;
             return GridNavigation.atHorizontalEdge(position, rowCount, COLUMNS,
@@ -2329,6 +2332,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             bar.addView(button, bar.indexOfChild(btnWifi));
             topAppButtons.add(button);
         }
+    }
+
+    @Override public void onInputTile(String inputId) {
+        openInput(inputId);
     }
 
     @Override public void onLibraryUp() {
