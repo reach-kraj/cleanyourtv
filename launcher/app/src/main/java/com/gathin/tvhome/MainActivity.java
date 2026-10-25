@@ -688,7 +688,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
         btnInputs = findViewById(R.id.btnInputs);
         View btnSettings = findViewById(R.id.btnSettings);
-        btnInputs.setOnClickListener(v -> showInputs());
+        boolean inputsDirect = cfg.inputsPillDirect;
+        btnInputs.setOnClickListener(v -> {
+            // inputs_pill_direct: straight to the lowest connected HDMI port; the menu when none is (or the TV can't tell).
+            String hdmi = inputsDirect ? HdmiInputs.firstConnected(this) : null;
+            if (hdmi != null) openInput(hdmi);
+            else showInputs();
+        });
         btnWifi.setOnClickListener(v -> openNetworkPill());
         btnWifi.setOnLongClickListener(v -> {
             open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
