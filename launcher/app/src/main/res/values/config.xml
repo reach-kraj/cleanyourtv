@@ -20,8 +20,8 @@
         <item>in.startv.hotstar</item>
         <item>com.google.android.youtube.tv</item>
         <item>com.amazon.amazonvideo.livingroom</item>
-        <item>org.smarttube.stable</item>
         <item>org.videolan.vlc</item>
+        <item>org.smarttube.stable</item>
     </string-array>
     <!-- With fewer dock_apps than columns (or a dock app that is not installed), the free dock slots take
          the first grid apps, so the dock never shows a gap. false leaves them empty (#162); a theme can
@@ -309,6 +309,9 @@
     <!-- A black gradient painted into the lower part of each wallpaper picture, 0 (off, the repo default) to 100 at the
          bottom edge: clear from 40% down, deepening behind the dock and rows. Painted once at decode, like wallpaper_dim. -->
     <integer name="wallpaper_bottom_fade">85</integer>
+    <!-- A silent looping video, wallpaper.mp4 in the theme folder, over the still wallpaper while Home is on screen; it
+         is released whenever Home is left. Needs a TV with RAM and a hardware decoder to spare (this one: 2.4 GB). -->
+    <bool name="wallpaper_video">false</bool>
     <!-- Rotating wallpapers: show each picture's name under the top-right buttons, from a captions.txt next to the
          pictures in wallpapers/ ("01-dusk.jpg<TAB>Dusk over the peaks", one per line). A picture without a line
          shows no name. Can also be set with "wallpaper_captions": true in a theme's config.json. -->

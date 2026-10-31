@@ -134,6 +134,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private RecyclerView grid;
     private FrameLayout root;
     private WallpaperPlayer wallpaperPlayer;
+    /** wallpaper_video: the looping video over the still wallpaper; null when off or there is no wallpaper.mp4. */
+    private VideoWallpaper videoWallpaper;
     private GlassView glass;
     private View ambient;
     private TextView heroName;
@@ -417,6 +419,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // the theme's background, so launch looks the same.
         getWindow().setBackgroundDrawable(null);
         wallpaperPlayer = new WallpaperPlayer(this, root, cfg);
+        File themeDir = Config.dir(this);
+        File video = themeDir == null ? null : new File(themeDir, "wallpaper.mp4");
+        if (getResources().getBoolean(R.bool.wallpaper_video) && video != null && video.isFile()) {
+            videoWallpaper = new VideoWallpaper(this, root, video, cfg.wallpaperDim,
+                    getResources().getInteger(R.integer.wallpaper_bottom_fade));
+        }
         sky = findViewById(R.id.sky);
         sky.setIntensity(cfg.skyIntensity);
         glass = findViewById(R.id.glass);
@@ -974,6 +982,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (showStats) startStats();
         sky.update();
         wallpaperPlayer.start();
+        if (videoWallpaper != null) videoWallpaper.start();
         handler.postDelayed(minuteTick, MINUTE_MS);
         if (festive && diya != null) {
             diya.start();
@@ -1143,6 +1152,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         root.removeCallbacks(showIdleClock);
         endReorder();   // Home or another app while reordering keeps the order so far
         wallpaperPlayer.stop();
+        if (videoWallpaper != null) videoWallpaper.stop();   // frees the video decoder for the next app or input
         stopAmbientAnimation();
         hero.animate().cancel();
         ambient.animate().cancel();
@@ -1204,6 +1214,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         super.onDestroy();
         unregisterReceiver(packageReceiver);
         wallpaperPlayer.close();
+        if (videoWallpaper != null) videoWallpaper.stop();
         ConnectivityManager cm = getSystemService(ConnectivityManager.class);
         TvInputManager tim = (TvInputManager) getSystemService(TV_INPUT_SERVICE);
         if (tim != null) tim.unregisterCallback(inputCallback);
@@ -2275,8 +2286,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * the clock's row, and the line between them goes. In Hebrew (rtl_menu_bar) the date and the clock's row sit right.
      */
     private void moveDateBelowClock() {
-        View column = (View) findViewById(R.id.date).getParent();
+        View date = findViewById(R.id.date);
+        View column = (View) date.getParent();
         View clockRow = (View) findViewById(R.id.clock).getParent();
+        // Wrap its text: at match_parent in a wrap_content column the TextClock keeps the width of the first date it
+        // showed, so a longer one ("SATURDAY 31 OCTOBER" after "SUNDAY 8 MARCH") was cut to "SATURDAY 31 O...".
+        ViewGroup.LayoutParams dateLp = date.getLayoutParams();
+        dateLp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+        date.setLayoutParams(dateLp);
         LinearLayout clockColumn = (LinearLayout) clockRow.getParent();
         ((ViewGroup) column.getParent()).removeView(column);
         findViewById(R.id.clockDivider).setVisibility(View.GONE);
